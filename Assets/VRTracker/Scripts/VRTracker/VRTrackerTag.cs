@@ -64,7 +64,7 @@ public class VRTrackerTag : MonoBehaviour {
 	protected Boolean commandReceived = false;
 	protected String command;
 
-
+    
     // Simple velocity calculation for Pickup script
 	private Vector3 previousPosition;
     [System.NonSerialized] public Vector3 velocity;
@@ -97,6 +97,7 @@ public class VRTrackerTag : MonoBehaviour {
     public Vector3 offset;
 	private NetworkIdentity netId;
   
+    public bool isOldTag = false;
 
     protected void Awake()
     {
@@ -116,8 +117,6 @@ public class VRTrackerTag : MonoBehaviour {
             return;
 		}
 
-		VRTracker.instance.AddTag (this);
-
         startTimestamp = System.DateTime.Now.Ticks / System.TimeSpan.TicksPerMillisecond;
 		lastLateUpateTimestamp = startTimestamp;
 
@@ -127,6 +126,7 @@ public class VRTrackerTag : MonoBehaviour {
 		orientationSpeeds = new Vector3[2];
 		orientations = new Queue<KeyValuePair<long, Vector3>>();
 
+        VRTracker.instance.AddTag (this);
 	
 		if(UID != "Enter Your Tag UID")
 		{
@@ -213,12 +213,19 @@ public class VRTrackerTag : MonoBehaviour {
 
         // Setting Orientation for Tag
         tagRotation = orientation_;
-		tagRotation.y -= VRTracker.instance.RoomNorthOffset;
+        if (isOldTag)
+        {
+            tagRotation.y -= orientationBegin.y;
+        }
+        else
+        {
+            tagRotation.y -= VRTracker.instance.RoomNorthOffset;
+        }
 
-		// SMOOTH ORIENTATION
+        // SMOOTH ORIENTATION
 
-		// Check if the position changed since last frame, and if the prediction needs to stop because a new position was received
-		if (lastFrameOrientationReceived.x == tagRotation.x && lastFrameOrientationReceived.y == tagRotation.y && lastFrameOrientationReceived.z == tagRotation.z) {
+        // Check if the position changed since last frame, and if the prediction needs to stop because a new position was received
+        if (lastFrameOrientationReceived.x == tagRotation.x && lastFrameOrientationReceived.y == tagRotation.y && lastFrameOrientationReceived.z == tagRotation.z) {
 			counterFrameWithSameOrientation++;
 		} else {
 			counterFrameWithSameOrientation = 0;
@@ -337,8 +344,7 @@ public class VRTrackerTag : MonoBehaviour {
                 buttonPressed = true;
                 buttonDown = true;
 				buttonUp = false;
-				if(transform.GetComponentInChildren<Camera>())
-	                ResetOrientation();
+                ResetOrientation();
             }
             else if (command.Contains("buttonoff"))
             {
@@ -392,6 +398,7 @@ public class VRTrackerTag : MonoBehaviour {
 	// Reset Headset orientation and Tag orientation offset
 	public void ResetOrientation()
 	{
+        Debug.Log("Resetting orientation");
 		if(orientationUsesQuaternion == true)
 			this.orientationBegin.y = this.imuOrientation_quat.eulerAngles.y;
 		else
@@ -406,9 +413,11 @@ public class VRTrackerTag : MonoBehaviour {
 	// Update the Oriention from IMU For Tag V1
 	public void UpdateOrientation(Vector3 neworientation)
 	{
-		Vector3 flippedRotation = neworientation;
-		orientation_ = flippedRotation;
-
+		Vector3 flippedRotation = new Vector3(-neworientation.x, neworientation.y, -neworientation.z); ;
+        Quaternion quattest = Quaternion.Euler(flippedRotation);
+        quattest = quattest * Quaternion.Euler(0, -180f, 0);
+        flippedRotation = quattest.eulerAngles; ;
+        orientation_ = flippedRotation;
 		orientationUsesQuaternion = false;
 		orientationReceptionTime = (System.DateTime.Now.Ticks / System.TimeSpan.TicksPerMillisecond) - startTimestamp;
 		orientationMessageSaved = false;

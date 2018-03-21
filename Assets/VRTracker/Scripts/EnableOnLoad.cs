@@ -16,7 +16,7 @@ public class EnableOnLoad : MonoBehaviour
     protected virtual void Start()
     {
 
-        if (transform.parent.GetComponent<NetworkIdentity>() != null && !transform.parent.GetComponent<NetworkIdentity>().isLocalPlayer)
+        if (transform.GetComponent<NetworkIdentity>() != null && !transform.GetComponent<NetworkIdentity>().isLocalPlayer)
         {
             Camera[] cams = GetComponentsInChildren<Camera>();
             //Desactivate camera of other player
@@ -68,7 +68,7 @@ public class EnableOnLoad : MonoBehaviour
         //Disable mesh
         if (controllerMesh)
         {
-            NetworkIdentity netId = transform.GetComponentInParent<NetworkIdentity>();
+			NetworkIdentity netId = transform.GetComponent<NetworkIdentity>();
             if ((netId != null && netId.isLocalPlayer))
             {
                 controllerMesh.enabled = false;

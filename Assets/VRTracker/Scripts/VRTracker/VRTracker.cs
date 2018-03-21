@@ -155,6 +155,8 @@ public class VRTracker : MonoBehaviour {
 				foreach (VRTrackerTag tag in tags) {
 					if (tag.UID == uid) {
 						if (orientationUpdated) {
+                            if (!tag.isOldTag)
+                                tag.isOldTag = true;
 							if (orientationQuaternion)
 								tag.UpdateOrientationQuat (orientation_quat);
 							else
